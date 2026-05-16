@@ -1,0 +1,306 @@
+import java.util.Scanner;
+
+public class VigenereCipher 
+{
+	public static void main(String[] args)
+   {
+
+		System.out.println("----Vigenere Cipher Encryptor----\n");
+		Scanner in = new Scanner(System.in);         // create an object to allow reading from the screen  
+					  
+      String key = prompt("Enter an encryption key (UPPERCASE): ", in, 1);
+      String EMessage = prompt("Enter the message (Remove all spaces): ", in, 1);
+		String encryptMessage = encrypt(EMessage, key);
+      System.out.print("********* ");
+		System.out.println("The encrypted message is: " + encryptMessage);
+	
+		String DMessage = encryptMessage;
+		String decryptMessage = decrypt(DMessage, key);
+      System.out.print("********* ");
+		System.out.println("The decrypted message is: " + decryptMessage);
+		
+	 }
+   
+/************************GETTING USER INPUT ***************************************************************************/
+    private static String prompt(String promptText, Scanner sc, int minLen) 
+    { 
+    /* receive text from program and displys on the screen for user to see */
+    
+        String s;
+        do 
+        {
+            System.out.print(promptText);
+            s = sc.nextLine().trim();               // accept message from user
+        }   
+        while (s.length() < minLen);
+        return s;
+    }
+    
+    
+/************************** ENCRYPTION SECTION *************************************************************************/
+
+	public static String encrypt(String Message, String Key) 
+   {
+		String EMessage = "";
+      
+		Message = Message.toUpperCase();       // convert message to upper case
+		for (int i = 0, j = 0; i < Message.length(); i++)
+       {
+			char letter = Message.charAt(i);
+			EMessage += (char)(((letter - 65) + (Key.charAt(j)-65)) % 26 + 65);
+			j = ++j % Key.length();
+		}
+		return EMessage;
+	}
+
+/************************** DECRYPTION SECTION *************************************************************************/
+ 
+	public static String decrypt(String Message, String Key) 
+   {
+		String DMessage = "";
+      
+		Message = Message.toUpperCase();       // convert message to upper case
+		for (int i = 0, j = 0; i < Message.length(); i++) 
+      {
+			char letter = Message.charAt(i);
+			DMessage += (char)((letter - Key.charAt(j) + 26) % 26 + 65);
+			j = ++j % Key.length();
+		}
+		return DMessage;
+	}
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+import java.awt.Point;
+import java.util.Scanner;
+ 
+public class PlayfairCipher 
+{
+    private static char[][] charTable;
+    private static Point[] positions;
+ 
+    public static void main(String[] args) 
+    {
+        Scanner sc = new Scanner(System.in);             // create an object to allow reading from the screen
+ 
+        String key = prompt("Enter an encryption key (min length 6): ", sc, 6);
+        String message = prompt("Enter the message: ", sc, 1);
+        String jti = prompt("Replace J with I? y/n: ", sc, 1);
+ 
+        boolean changeJtoI = jti.equalsIgnoreCase("y");
+ 
+        createTable(key, changeJtoI);
+ 
+        String enc = encode(prepareText(message, changeJtoI));
+        System.out.print("********* ");
+        System.out.print("The encrypted message is: " +enc);
+        System.out.println();
+        System.out.print("********* ");
+        System.out.println ("The decrypted message is: " + decode(enc));
+       
+    }
+ 
+ /***************************************************************************************************/
+    private static String prompt(String promptText, Scanner sc, int minLen) 
+    { 
+    /* receive text from program and displys on the screen for user to see */
+    
+        String s;
+        do 
+        {
+            System.out.print(promptText);
+            s = sc.nextLine().trim();         // accept message from user
+        } 
+        while (s.length() < minLen);
+        return s;
+    }
+    
+  /***************************************************************************************************/
+    private static String prepareText(String s, boolean changeJtoI) 
+    {
+     /* convert string to uppercase */
+     
+        s = s.toUpperCase().replaceAll("[^A-Z]", "");
+        return changeJtoI ? s.replace("J", "I") : s.replace("Q", "");
+    }
+ 
+  /***************************************************************************************************/
+    private static void createTable(String key, boolean changeJtoI) 
+    {
+     /* create 5 by 5 matrix table for cipher */
+     
+        charTable = new char[5][5];
+        positions = new Point[26];
+ 
+        String s = prepareText(key + "ABCDEFGHIJKLMNOPQRSTUVWXYZ", changeJtoI);
+ 
+        int len = s.length();
+        for (int i = 0, k = 0; i < len; i++) 
+        {
+            char c = s.charAt(i);
+            if (positions[c - 'A'] == null) 
+            {
+                charTable[k / 5][k % 5] = c;
+                positions[c - 'A'] = new Point(k % 5, k / 5);
+                k++;
+            }
+        }
+    }
+    
+  /***************************************************************************************************/
+    private static String encode(String s) 
+    {
+     /* encrypt message using table */
+     
+        StringBuilder sb = new StringBuilder(s);
+ 
+        for (int i = 0; i < sb.length(); i += 2)
+         {
+ 
+            if (i == sb.length() - 1)
+                sb.append(sb.length() % 2 == 1 ? 'X' : "");
+ 
+            else if (sb.charAt(i) == sb.charAt(i + 1))
+                sb.insert(i + 1, 'X');
+        }
+        return codec(sb, 1);
+    }
+ 
+  /***************************************************************************************************/
+    private static String decode(String s) 
+    {
+        return codec(new StringBuilder(s), 4);
+    }
+ 
+  /***************************************************************************************************/
+    private static String codec(StringBuilder text, int direction) 
+    {
+     /* function to decrpt code back to orignial */
+     
+        int len = text.length();
+        for (int i = 0; i < len; i += 2) 
+        {
+            char a = text.charAt(i);
+            char b = text.charAt(i + 1);
+ 
+            int row1 = positions[a - 'A'].y;
+            int row2 = positions[b - 'A'].y;
+            int col1 = positions[a - 'A'].x;
+            int col2 = positions[b - 'A'].x;
+ 
+            if (row1 == row2) 
+            {
+                col1 = (col1 + direction) % 5;
+                col2 = (col2 + direction) % 5;
+ 
+            } 
+            else if (col1 == col2) 
+            {
+                row1 = (row1 + direction) % 5;
+                row2 = (row2 + direction) % 5;
+ 
+            } 
+            else 
+            {
+                int tmp = col1;
+                col1 = col2;
+                col2 = tmp;
+            }
+ 
+            text.setCharAt(i, charTable[row1][col1]);
+            text.setCharAt(i + 1, charTable[row2][col2]);
+        }
+        return text.toString();
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+import java.util.*;
+ 
+class CaesarCipher
+{
+    public static void main(String args[])
+    {
+      Scanner sc  = new Scanner(System.in);     // create an object to allow reading from the screen
+      int shift, msgsize, i;
+      char ch, ch1;
+      String encrypt= "", decrypt = "";
+      
+      String message = prompt("Enter the desired message (at least 6 in length):  ", sc, 6);          
+      message = message.toLowerCase();        // convert of message to lower case
+      msgsize = message.length();             // determine the length of the message 
+                  
+      String shiftval = prompt("Enter the value by which each letter of the string is to be shifted: ", sc, 1);
+      shift = Integer.parseInt(shiftval);     // accept key to determine how many spaces to shift alphabet
+      System.out.println();
+      System.out.print("********* ");
+                                  
+/************************** ENCRYPTION SECTION *************************************************************************/
+		System.out.print("The encrypted message is: ");
+      
+	   char emsg[] = message.toCharArray();   // convert message to individual standing characters
+
+      for(i = 0; i < msgsize; i++)
+       {
+          if(Character.isLetter(emsg[i]))
+          {
+            ch = (char)(((int)emsg[i] + shift - 97) % 26 + 97); // find the encryption equal for letter
+            encrypt += ch;
+          } 
+         else if(emsg[i] == ' ')
+         {
+            encrypt += emsg[i];            // add for spaces in correct location as in message
+         } 
+       }
+       System.out.println(encrypt);       // print encrypted message 
+       System.out.println();
+       System.out.print("********* ");
+
+ /************************** DECRYPTION SECTION *************************************************************************/
+          
+		  System.out.print("The decrypted message is: ");
+         
+        char dmsg[] = encrypt.toCharArray();   // convert encrypted message to individual standing characters
+       
+        for(i = 0; i < encrypt.length(); i++)
+          if(Character.isLetter(dmsg[i]))
+           {
+              if(((int) dmsg[i] - shift) < 97)
+                 ch1 = (char)(((int)dmsg[i] - shift - 97 + 26) % 26 + 97);
+              else
+                 ch1 = (char)(((int)dmsg[i] - shift - 97) % 26 + 97);
+              decrypt += ch1;
+           } 
+           else if(dmsg[i] == ' ')
+             decrypt += dmsg[i];             // add for spaces in correct location as in message           
+         System.out.println(decrypt);
+    }                                        // ending main program 
+  
+/************************ GETTING USER INPUT ***************************************************************************/
+    private static String prompt(String promptText, Scanner sc, int minLen) 
+    { 
+    /* receive text from program and displys on the screen for user to see */
+    
+        String s;
+        do 
+        {
+            System.out.print(promptText);
+            s = sc.nextLine().trim();        // accept message from user
+        } 
+        while (s.length() < minLen);
+        return s;
+    }
+  
+/**********************************************************************************************************************/      
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
